@@ -11,12 +11,15 @@ from typing import Optional
 from model import Red9injaGPT, get_config
 from auth.routes import router as auth_router
 from auth.cognito import get_current_user
+from database.routes import router as conversation_router
+from database.conversations import conversation_store
 
 
 app = FastAPI(title="Red9inja-GPT API", version="1.0.0")
 
-# Include authentication routes
+# Include routers
 app.include_router(auth_router)
+app.include_router(conversation_router)
 
 # Global model and tokenizer
 model = None
@@ -62,6 +65,7 @@ async def load_model():
 @app.post("/generate", response_model=GenerateResponse)
 async def generate(
     request: GenerateRequest,
+    conversation_id: Optional[str] = None,
     user: dict = Depends(get_current_user)
 ):
     """Generate text from prompt (Authenticated users only)"""
@@ -69,9 +73,33 @@ async def generate(
     if model is None or tokenizer is None:
         raise HTTPException(status_code=500, detail="Model not loaded")
     
+    user_id = user['sub']
+    
+    # Create conversation if not provided
+    if not conversation_id:
+        conversation_id = conversation_store.create_conversation(user_id, "New Chat")
+    
+    # Add user message to conversation
+    conversation_store.add_message(
+        conversation_id=conversation_id,
+        role='user',
+        content=request.prompt,
+        user_id=user_id
+    )
+    
     try:
+        # Get conversation context
+        context_messages = conversation_store.get_conversation_context(conversation_id)
+        
+        # Build context from previous messages
+        context_text = ""
+        for msg in context_messages[-5:]:  # Last 5 messages
+            context_text += f"{msg['role']}: {msg['content']}\n"
+        
+        full_prompt = context_text + f"user: {request.prompt}\nassistant:"
+        
         # Encode prompt
-        input_ids = tokenizer.encode(request.prompt, return_tensors='pt').to(device)
+        input_ids = tokenizer.encode(full_prompt, return_tensors='pt').to(device)
         
         # Generate
         with torch.no_grad():
@@ -87,8 +115,19 @@ async def generate(
         # Decode
         generated_text = tokenizer.decode(output_ids[0], skip_special_tokens=True)
         
+        # Extract only the assistant's response
+        assistant_response = generated_text.split("assistant:")[-1].strip()
+        
+        # Add assistant message to conversation
+        conversation_store.add_message(
+            conversation_id=conversation_id,
+            role='assistant',
+            content=assistant_response,
+            user_id=user_id
+        )
+        
         return GenerateResponse(
-            generated_text=generated_text,
+            generated_text=assistant_response,
             prompt=request.prompt,
             num_tokens=len(output_ids[0]),
         )
