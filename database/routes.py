@@ -49,12 +49,13 @@ async def create_conversation(
     return conversation
 
 
-@router.get("/", response_model=List[ConversationResponse])
+@app.get("/conversations", response_model=List[ConversationResponse])
+@cached(ttl=300, key_prefix="user_conversations")
 async def list_conversations(
     limit: int = 50,
     user: dict = Depends(get_current_user)
 ):
-    """List all user conversations"""
+    """List all user conversations (cached for 5 minutes)"""
     user_id = user['sub']
     conversations = conversation_store.get_user_conversations(user_id, limit)
     return conversations

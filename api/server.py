@@ -13,9 +13,14 @@ from auth.routes import router as auth_router
 from auth.cognito import get_current_user
 from database.routes import router as conversation_router
 from database.conversations import conversation_store
+from utils.rate_limit import rate_limit_middleware
+from utils.cache import cache, cached
 
 
 app = FastAPI(title="Red9inja-GPT API", version="1.0.0")
+
+# Add rate limiting middleware
+app.middleware("http")(rate_limit_middleware)
 
 # Include routers
 app.include_router(auth_router)
