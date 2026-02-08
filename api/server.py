@@ -2,7 +2,7 @@
 FastAPI server for text generation
 """
 
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, HTTPException, Depends, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel
 import torch
 from transformers import GPT2Tokenizer
@@ -15,12 +15,15 @@ from database.routes import router as conversation_router
 from database.conversations import conversation_store
 from utils.rate_limit import rate_limit_middleware
 from utils.cache import cache, cached
+from utils.metrics import metrics_middleware, get_metrics
+from api.websocket import manager
 
 
 app = FastAPI(title="Red9inja-GPT API", version="1.0.0")
 
-# Add rate limiting middleware
+# Add middlewares
 app.middleware("http")(rate_limit_middleware)
+app.middleware("http")(metrics_middleware)
 
 # Include routers
 app.include_router(auth_router)
@@ -151,6 +154,12 @@ async def health():
     }
 
 
+@app.get("/metrics")
+async def metrics():
+    """Prometheus metrics endpoint"""
+    return get_metrics()
+
+
 @app.get("/")
 async def root():
     """Root endpoint (Public)"""
@@ -160,10 +169,69 @@ async def root():
         "endpoints": {
             "auth": "/auth",
             "generate": "/generate",
+            "stream": "/ws/generate",
             "health": "/health",
             "docs": "/docs",
         }
     }
+
+
+@app.websocket("/ws/generate")
+async def websocket_generate(
+    websocket: WebSocket,
+    token: str
+):
+    """WebSocket endpoint for streaming generation"""
+    try:
+        # Verify token
+        from auth.cognito import cognito_auth
+        user = cognito_auth.verify_token(token)
+        user_id = user['sub']
+        
+        # Connect WebSocket
+        await manager.connect(websocket, user_id)
+        
+        try:
+            while True:
+                # Receive message
+                data = await websocket.receive_json()
+                prompt = data.get('prompt')
+                conversation_id = data.get('conversation_id')
+                
+                if not prompt:
+                    await websocket.send_json({
+                        "type": "error",
+                        "content": "Prompt is required"
+                    })
+                    continue
+                
+                # Create conversation if needed
+                if not conversation_id:
+                    conversation_id = conversation_store.create_conversation(user_id)
+                
+                # Add user message
+                conversation_store.add_message(
+                    conversation_id=conversation_id,
+                    role='user',
+                    content=prompt,
+                    user_id=user_id
+                )
+                
+                # Stream generation
+                await manager.stream_generation(
+                    websocket=websocket,
+                    prompt=prompt,
+                    model=model,
+                    tokenizer=tokenizer,
+                    device=device,
+                    max_tokens=data.get('max_tokens', 100)
+                )
+        
+        except WebSocketDisconnect:
+            manager.disconnect(websocket, user_id)
+    
+    except Exception as e:
+        await websocket.close(code=1008, reason=str(e))
 
 
 if __name__ == "__main__":
