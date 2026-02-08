@@ -1,0 +1,42 @@
+name: Trigger Infrastructure Deployment
+
+on:
+  push:
+    branches:
+      - dev
+      - test
+      - staging
+      - prod
+    paths:
+      - 'model/**'
+      - 'api/**'
+      - 'data/**'
+      - 'training/**'
+      - 'utils/**'
+      - '*.py'
+      - 'requirements.txt'
+
+jobs:
+  trigger-infra:
+    name: Trigger INFRA Repo Deployment
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Get branch name
+      id: branch
+      run: |
+        BRANCH_NAME=${GITHUB_REF#refs/heads/}
+        echo "environment=$BRANCH_NAME" >> $GITHUB_OUTPUT
+
+    - name: Trigger infrastructure deployment
+      uses: peter-evans/repository-dispatch@v2
+      with:
+        token: ${{ secrets.INFRA_TRIGGER_TOKEN }}
+        repository: red9inja/red9inja-GPT-INFRA
+        event-type: trigger-deployment
+        client-payload: '{"environment": "${{ steps.branch.outputs.environment }}", "triggered_by": "red9inja-GPT", "commit": "${{ github.sha }}"}'
+
+    - name: Deployment triggered
+      run: |
+        echo "Infrastructure deployment triggered for environment: ${{ steps.branch.outputs.environment }}"
+        echo "Check status at: https://github.com/red9inja/red9inja-GPT-INFRA/actions"
