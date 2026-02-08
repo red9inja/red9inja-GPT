@@ -3,8 +3,12 @@ name: Trivy Docker Scan
 on:
   push:
     branches: [dev, test, staging, prod]
+    branches-ignore:
+      - main
   pull_request:
     branches: [dev, test, staging, prod]
+    branches-ignore:
+      - main
 
 jobs:
   trivy-image-scan:
