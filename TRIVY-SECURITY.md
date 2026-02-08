@@ -146,13 +146,13 @@ CVE-2023-11111 # False positive, not exploitable
 
 | Feature | Trivy | OWASP Dependency-Check | Snyk |
 |---------|-------|------------------------|------|
-| Container Scan | ✅ | ❌ | ✅ |
-| IaC Scan | ✅ | ❌ | ✅ |
-| Secret Detection | ✅ | ❌ | ✅ |
-| SBOM Generation | ✅ | ❌ | ✅ |
+| Container Scan |  |  |  |
+| IaC Scan |  |  |  |
+| Secret Detection |  |  |  |
+| SBOM Generation |  |  |  |
 | Speed | Fast | Slow | Fast |
 | Cost | Free | Free | Paid |
-| Offline Mode | ✅ | ✅ | ❌ |
+| Offline Mode |  |  |  |
 
 ## Best Practices
 
