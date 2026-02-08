@@ -1,0 +1,10 @@
+# Ignore false positives or accepted risks
+
+# Example: Ignore specific CVE
+# CVE-2023-12345
+
+# Example: Ignore with expiry date
+# CVE-2023-67890 exp:2026-03-01
+
+# Example: Ignore with reason
+# CVE-2023-11111 # False positive - not exploitable in our use case
