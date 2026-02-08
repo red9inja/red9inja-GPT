@@ -17,11 +17,13 @@ from utils.rate_limit import rate_limit_middleware
 from utils.cache import cache, cached
 from utils.metrics import metrics_middleware, get_metrics
 from api.websocket import manager
+from src.api.middleware.owasp_security import OWASPSecurityMiddleware
 
 
 app = FastAPI(title="Red9inja-GPT API", version="1.0.0")
 
 # Add middlewares
+app.add_middleware(OWASPSecurityMiddleware)
 app.middleware("http")(rate_limit_middleware)
 app.middleware("http")(metrics_middleware)
 
