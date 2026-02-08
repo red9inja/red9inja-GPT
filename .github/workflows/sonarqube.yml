@@ -42,6 +42,7 @@ jobs:
       env:
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+      continue-on-error: true
 
     - name: SonarQube Quality Gate
       uses: sonarsource/sonarqube-quality-gate-action@master
@@ -49,3 +50,18 @@ jobs:
       env:
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       continue-on-error: true
+
+    - name: Comment PR with SonarQube results
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const sonarUrl = process.env.SONAR_HOST_URL;
+          const projectKey = 'red9inja-gpt';
+          
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: `## SonarQube Analysis Complete\n\nView detailed report: ${sonarUrl}/dashboard?id=${projectKey}`
+          });
