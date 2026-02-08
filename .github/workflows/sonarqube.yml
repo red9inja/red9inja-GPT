@@ -3,13 +3,19 @@ name: SonarQube Code Analysis
 on:
   push:
     branches:
-      - main
       - dev
       - test
       - staging
       - prod
+    branches-ignore:
+      - main
   pull_request:
     types: [opened, synchronize, reopened]
+    branches:
+      - dev
+      - test
+      - staging
+      - prod
 
 jobs:
   sonarqube:
