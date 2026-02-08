@@ -2,16 +2,21 @@
 FastAPI server for text generation
 """
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends
 from pydantic import BaseModel
 import torch
 from transformers import GPT2Tokenizer
 from typing import Optional
 
 from model import Red9injaGPT, get_config
+from auth.routes import router as auth_router
+from auth.cognito import get_current_user
 
 
 app = FastAPI(title="Red9inja-GPT API", version="1.0.0")
+
+# Include authentication routes
+app.include_router(auth_router)
 
 # Global model and tokenizer
 model = None
@@ -55,8 +60,11 @@ async def load_model():
 
 
 @app.post("/generate", response_model=GenerateResponse)
-async def generate(request: GenerateRequest):
-    """Generate text from prompt"""
+async def generate(
+    request: GenerateRequest,
+    user: dict = Depends(get_current_user)
+):
+    """Generate text from prompt (Authenticated users only)"""
     
     if model is None or tokenizer is None:
         raise HTTPException(status_code=500, detail="Model not loaded")
@@ -91,7 +99,7 @@ async def generate(request: GenerateRequest):
 
 @app.get("/health")
 async def health():
-    """Health check endpoint"""
+    """Health check endpoint (Public)"""
     return {
         "status": "healthy",
         "model_loaded": model is not None,
@@ -101,11 +109,12 @@ async def health():
 
 @app.get("/")
 async def root():
-    """Root endpoint"""
+    """Root endpoint (Public)"""
     return {
         "message": "Red9inja-GPT API",
         "version": "1.0.0",
         "endpoints": {
+            "auth": "/auth",
             "generate": "/generate",
             "health": "/health",
             "docs": "/docs",
