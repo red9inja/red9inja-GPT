@@ -59,7 +59,7 @@ def generate_text(
 
 # Create Gradio interface
 with gr.Blocks(title="Red9inja-GPT") as demo:
-    gr.Markdown("# 🤖 Red9inja-GPT")
+    gr.Markdown("# Red9inja-GPT")
     gr.Markdown("A production-grade GPT implementation")
     
     with gr.Row():

@@ -1,20 +1,20 @@
-# Red9inja-GPT 🤖
+# Red9inja-GPT
 
 A production-grade GPT-style language model implementation from scratch using PyTorch. This project demonstrates the complete architecture of modern Large Language Models (LLMs) similar to ChatGPT and Claude.
 
-## 🌟 Features
+## Features
 
-- **Full Transformer Architecture**: Multi-head self-attention, feed-forward networks, layer normalization
-- **Scalable Design**: Supports models from 10M to 1B+ parameters
-- **Training Pipeline**: Complete training loop with gradient accumulation and mixed precision
-- **Text Generation**: Multiple sampling strategies (greedy, top-k, top-p/nucleus)
-- **Tokenization**: BPE tokenizer implementation
-- **Distributed Training**: Multi-GPU support with DDP
-- **Model Checkpointing**: Save and resume training
-- **Inference API**: REST API for text generation
-- **Web Interface**: Simple chat interface
+- Full Transformer Architecture: Multi-head self-attention, feed-forward networks, layer normalization
+- Scalable Design: Supports models from 10M to 1B+ parameters
+- Training Pipeline: Complete training loop with gradient accumulation and mixed precision
+- Text Generation: Multiple sampling strategies (greedy, top-k, top-p/nucleus)
+- Tokenization: BPE tokenizer implementation
+- Distributed Training: Multi-GPU support with DDP
+- Model Checkpointing: Save and resume training
+- Inference API: REST API for text generation
+- Web Interface: Simple chat interface
 
-## 📋 Architecture
+## Architecture
 
 ```
 Input Text → Tokenization → Embedding Layer → Transformer Blocks → Output Layer → Generated Text
@@ -25,7 +25,7 @@ Input Text → Tokenization → Embedding Layer → Transformer Blocks → Outpu
                                           [Residual Connections]
 ```
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Installation
 
@@ -67,7 +67,7 @@ python api_server.py --port 8000
 python web_app.py
 ```
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 red9inja-GPT/
@@ -103,7 +103,7 @@ red9inja-GPT/
 └── README.md              # This file
 ```
 
-## 🔧 Model Configurations
+## Model Configurations
 
 ### Small (10M parameters)
 - Layers: 6
@@ -123,15 +123,15 @@ red9inja-GPT/
 - Heads: 16
 - Context Length: 2048
 
-## 📊 Training Details
+## Training Details
 
-- **Optimizer**: AdamW with weight decay
-- **Learning Rate**: Cosine annealing with warmup
-- **Batch Size**: Gradient accumulation for large effective batch sizes
-- **Mixed Precision**: FP16 training for faster computation
-- **Regularization**: Dropout, layer normalization
+- Optimizer: AdamW with weight decay
+- Learning Rate: Cosine annealing with warmup
+- Batch Size: Gradient accumulation for large effective batch sizes
+- Mixed Precision: FP16 training for faster computation
+- Regularization: Dropout, layer normalization
 
-## 🎯 Performance
+## Performance
 
 | Model Size | Parameters | Training Time | Perplexity | GPU Memory |
 |------------|-----------|---------------|------------|------------|
@@ -139,7 +139,7 @@ red9inja-GPT/
 | Medium     | 100M      | 1 day         | ~30        | 16GB       |
 | Large      | 1B        | 1 week        | ~20        | 40GB       |
 
-## 🛠️ Advanced Features
+## Advanced Features
 
 ### Distributed Training
 ```bash
@@ -156,7 +156,7 @@ python finetune.py --checkpoint checkpoints/pretrained.pt --data custom_data.txt
 python export.py --checkpoint checkpoints/model.pt --format onnx
 ```
 
-## 📚 Technical Details
+## Technical Details
 
 ### Attention Mechanism
 ```
@@ -170,24 +170,24 @@ Total Parameters = (vocab_size × embed_dim) +
                    (embed_dim × vocab_size)
 ```
 
-## 🤝 Contributing
+## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
 
-## 📄 License
+## License
 
 MIT License - see LICENSE file for details
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - Inspired by GPT-2, GPT-3, and Claude architectures
 - Based on "Attention Is All You Need" paper
 - Uses PyTorch framework
 
-## 📞 Contact
+## Contact
 
 For questions or feedback, please open an issue on GitHub.
 
 ---
 
-**Note**: This is an educational implementation. For production use cases, consider using established models like GPT-4, Claude, or open-source alternatives like Llama.
+Note: This is an educational implementation. For production use cases, consider using established models like GPT-4, Claude, or open-source alternatives like Llama.
