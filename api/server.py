@@ -1,0 +1,118 @@
+"""
+FastAPI server for text generation
+"""
+
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+import torch
+from transformers import GPT2Tokenizer
+from typing import Optional
+
+from model import Red9injaGPT, get_config
+
+
+app = FastAPI(title="Red9inja-GPT API", version="1.0.0")
+
+# Global model and tokenizer
+model = None
+tokenizer = None
+device = None
+
+
+class GenerateRequest(BaseModel):
+    prompt: str
+    max_tokens: int = 100
+    temperature: float = 0.8
+    top_k: Optional[int] = 50
+    top_p: Optional[float] = 0.95
+    do_sample: bool = True
+
+
+class GenerateResponse(BaseModel):
+    generated_text: str
+    prompt: str
+    num_tokens: int
+
+
+@app.on_event("startup")
+async def load_model():
+    """Load model on startup"""
+    global model, tokenizer, device
+    
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    print(f"Using device: {device}")
+    
+    # Load tokenizer
+    tokenizer = GPT2Tokenizer.from_pretrained('gpt2')
+    
+    # Load model (you need to specify checkpoint path)
+    # For now, create a small model for demonstration
+    config = get_config('small')
+    model = Red9injaGPT(config).to(device)
+    model.eval()
+    
+    print("Model loaded successfully!")
+
+
+@app.post("/generate", response_model=GenerateResponse)
+async def generate(request: GenerateRequest):
+    """Generate text from prompt"""
+    
+    if model is None or tokenizer is None:
+        raise HTTPException(status_code=500, detail="Model not loaded")
+    
+    try:
+        # Encode prompt
+        input_ids = tokenizer.encode(request.prompt, return_tensors='pt').to(device)
+        
+        # Generate
+        with torch.no_grad():
+            output_ids = model.generate(
+                input_ids,
+                max_new_tokens=request.max_tokens,
+                temperature=request.temperature,
+                top_k=request.top_k,
+                top_p=request.top_p,
+                do_sample=request.do_sample,
+            )
+        
+        # Decode
+        generated_text = tokenizer.decode(output_ids[0], skip_special_tokens=True)
+        
+        return GenerateResponse(
+            generated_text=generated_text,
+            prompt=request.prompt,
+            num_tokens=len(output_ids[0]),
+        )
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/health")
+async def health():
+    """Health check endpoint"""
+    return {
+        "status": "healthy",
+        "model_loaded": model is not None,
+        "device": str(device),
+    }
+
+
+@app.get("/")
+async def root():
+    """Root endpoint"""
+    return {
+        "message": "Red9inja-GPT API",
+        "version": "1.0.0",
+        "endpoints": {
+            "generate": "/generate",
+            "health": "/health",
+            "docs": "/docs",
+        }
+    }
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
